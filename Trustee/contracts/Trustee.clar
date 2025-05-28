@@ -4,6 +4,13 @@
 (define-constant ACCESS-DENIED u403)
 (define-constant INVALID-STATE u422)
 (define-constant RESOURCE-LOCKED u423)
+(define-constant INVALID-PARAMETER u400)
+
+;; Parameter Constraints
+(define-constant MIN-TICKET-PRICE u10)
+(define-constant MAX-TICKET-PRICE u10000)
+(define-constant MIN-THRESHOLD-VALUE u1)
+(define-constant MAX-THRESHOLD-VALUE u50)
 
 ;; Dynamic State Management
 (define-data-var round-counter uint u0)
@@ -61,6 +68,15 @@
       (ok product)
     )
   )
+)
+
+;; Parameter Validation
+(define-private (validate-ticket-price (price uint))
+  (and (>= price MIN-TICKET-PRICE) (<= price MAX-TICKET-PRICE))
+)
+
+(define-private (validate-threshold (threshold uint))
+  (and (>= threshold MIN-THRESHOLD-VALUE) (<= threshold MAX-THRESHOLD-VALUE))
 )
 
 ;; Core Protocol Functions
@@ -164,6 +180,12 @@
   (begin
     (asserts! (is-eq tx-sender sys-admin) (err ACCESS-DENIED))
     (asserts! (not (var-get session-active)) (err INVALID-STATE))
+    
+    ;; Validate input parameters
+    (asserts! (validate-ticket-price new-price) (err INVALID-PARAMETER))
+    (asserts! (validate-threshold new-threshold) (err INVALID-PARAMETER))
+    
+    ;; Set parameters after validation
     (var-set ticket-price new-price)
     (var-set min-threshold new-threshold)
     (ok true)
